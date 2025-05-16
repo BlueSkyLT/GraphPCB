@@ -13,7 +13,7 @@ The GraphPCB Dataset consists of graph-based representations of printed circuit 
 | Others (Class 3)               | 12,790 | 4,864 | 17,654 | 97.0% |
 
 
-### 📈 Dataset Statistics (Graph-W)
+### 📈 Dataset Statistics (Graph-F)
 | Graph-F                         | Train  | Test  | Total  | Ratio |
 | --------------------------------- | ------ | ----- | ------ | ----- |
 | Number of Graphs               | 115    | 47    | 162    | –     |
@@ -26,15 +26,15 @@ The GraphPCB Dataset consists of graph-based representations of printed circuit 
 
 
 ## Download Dataset
-The `*.pt` files are included in the repo in `./data/GraphPCB/`
+The `*.pt` files are included in the repo under `./data/GraphPCB/`
 
-The full dataset is hosted at Kaggle [The GraphPCB Dataset](https://www.kaggle.com/datasets/irislan/graphpcb)
+The full dataset, including the source images and masks, is hosted at Kaggle: [The GraphPCB Dataset](https://www.kaggle.com/datasets/irislan/graphpcb).
 
 ## Requirements
 To build the environment, run
 
 ```
-pip install -r requirements.txt
+conda env create -f environment.yml
 ```
 
 ## 📁 Folder Structure
