@@ -4,7 +4,7 @@
 The GraphPCB Dataset consists of graph-based representations of printed circuit boards (PCBs), created from two sources: [WACV 2019 PCB Dataset](https://sites.google.com/view/chiawen-kuo/home/pcb-component-detection) and [FPIC-PCB dataset](https://datasetninja.com/fpic-component). Each PCB image is converted into a graph where components are nodes, and spatial relationships are edges. This structure is useful for tasks such as graph classification and component detection in electronic hardware.
 
 ### 📈 Dataset Statistics (Graph-W)
-| Graph-W    | Train  | Test  | Total  | Percentage |
+| Graph-W    | Train  | Test  | Total  | Ratio |
 | --------------------------------- | ------ | ----- | ------ | ----- |
 | Number of Graphs               | 37     | 10    | 47     | –     |
 | IC (Class 0)                   | 247    | 139   | 386    | 2.0%  |
@@ -26,9 +26,7 @@ The GraphPCB Dataset consists of graph-based representations of printed circuit 
 
 
 ## Download Dataset
-The `*.pt` files are included in the repo under `./data/GraphPCB/`
-
-The full dataset, including the source images and masks, is hosted at Kaggle: [The GraphPCB Dataset](https://www.kaggle.com/datasets/irislan/graphpcb).
+The `*.pt` files are included in the repo under `./data/GraphPCB/`. The full dataset, including the source images and masks, is hosted at Kaggle: [The GraphPCB Dataset](https://www.kaggle.com/datasets/irislan/graphpcb).
 
 ## Requirements
 To build the environment, run
