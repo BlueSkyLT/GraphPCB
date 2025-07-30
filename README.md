@@ -39,19 +39,15 @@ conda env create -f environment.yml
 
 ```
 GraphPCB/
-├── acmgnn/                     # ACMGNN model
+├── utils/                      # All the models, utility modules and helper functions
 ├── data/
 │   └── GraphPCB/               # GraphPCB dataset
 │       ├── Graph-F/graphs/     # Graph-F dataset (*.pt files)
 │       └── Graph-W/graphs/     # Graph-W dataset (*.pt files)
-├── graphsep/                   # GT-sep and GAT-sep models
 ├── acmgnn.ipynb                # script to run ACMGNN on GraphPCB dataset
-├── base_models.py              # basic MLP, GCN, GIN, GAT, GraphSAGE
 ├── graphsep.ipynb              # script to run GT-sep and GAT-sep on GraphPCB dataset
-├── logger.py                   # helper functions
 ├── node_classification_GraphPCB.ipynb      # script to run basic MLP, GCN, GIN, GAT, GraphSAGE on GraphPCB dataset
-├── README.md
-└── utils.py                    # helper functions
+└── README.md                   
 ```
 
 ## Citation
