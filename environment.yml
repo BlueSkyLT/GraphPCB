@@ -287,4 +287,4 @@ dependencies:
       - webencodings==0.5.1
       - werkzeug==3.0.6
       - yarl==1.15.2
-prefix: /home/lantian/miniconda3/envs/gnn
+
