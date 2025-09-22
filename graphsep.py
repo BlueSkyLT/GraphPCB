@@ -50,7 +50,7 @@ class GraphPCBDataset:
         # Load and convert each graph
         for filename in self.graph_files:
             if filename.endswith(".pt"):
-                data = torch.load(os.path.join(data_dir, filename))
+                data = torch.load(os.path.join(data_dir, filename), map_location='cpu')  # Load to CPU first
                 # get the number of node features and the number of classes
                 self.num_node_features = data.x.size(1)
                 self.num_targets = data.y.max().item() + 1 if data.y is not None else 0
@@ -59,8 +59,8 @@ class GraphPCBDataset:
                 edge_index = data.edge_index
                 num_nodes = data.x.size(0)
 
-                # Create DGL graph
-                g = dgl.graph((edge_index[0], edge_index[1]), num_nodes=num_nodes, device=device)
+                # Create DGL graph on CPU first
+                g = dgl.graph((edge_index[0], edge_index[1]), num_nodes=num_nodes)
 
                 if to_bidirectional:
                     g = dgl.to_bidirected(g)
@@ -68,8 +68,11 @@ class GraphPCBDataset:
                     g = dgl.add_self_loop(g)
 
                 # Add node features and labels
-                g.ndata['x'] = data.x.to(device)
-                g.ndata['y'] = data.y.to(device)
+                g.ndata['x'] = data.x
+                g.ndata['y'] = data.y
+
+                # Move to target device
+                g = g.to(device)
 
                 self.graphs.append(g)
 
@@ -160,18 +163,26 @@ def train_model(model, config):
             model.eval()
             all_preds = []
             all_labels = []
+            predictions = []
 
             with torch.no_grad():
-                for graph in test_dataset:
+                for i, graph in enumerate(test_dataset):
                     logits = model(graph, graph.ndata['x'])
                     preds = torch.argmax(logits, dim=1)
                     
                     all_preds.extend(preds.cpu().numpy())
                     all_labels.extend(graph.ndata['y'].cpu().numpy())
+                    
+                    # Get graph filename for this graph
+                    graph_filename = test_dataset.graph_files[i] if i < len(test_dataset.graph_files) else f"graph_{i}.pt"
+                    predictions.append({
+                        "graph_id": graph_filename,
+                        "labels": preds.cpu().numpy().tolist()
+                    })
 
             # Compute metrics
             metrics = compute_metrics(all_preds, all_labels)
-            logger.update_metrics(metrics, {})
+            logger.update_metrics(metrics, predictions)
     
     logger.finish_run()
     # Save final model

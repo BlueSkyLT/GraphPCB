@@ -158,16 +158,23 @@ def train_model(model, config):
             model.eval()
             all_preds = []
             all_labels = []
-            predictions = {}
+            predictions = []
 
             with torch.no_grad():
-                for batch in test_loader:
+                for i, batch in enumerate(test_loader):
                     batch = batch.to(config["device"])
                     logits = model(batch.x, batch.edge_index)
                     preds = torch.argmax(logits, dim=1)
                     
                     all_preds.extend(preds.cpu().numpy())
                     all_labels.extend(batch.y.cpu().numpy())
+                    
+                    # Get graph filename for this batch
+                    graph_filename = test_loader.dataset.graph_files[i] if i < len(test_loader.dataset.graph_files) else f"graph_{i}.pt"
+                    predictions.append({
+                        "graph_id": graph_filename,
+                        "labels": preds.cpu().numpy().tolist()
+                    })
 
             # Compute metrics
             metrics = compute_metrics(all_preds, all_labels)

@@ -126,6 +126,7 @@ def train_model(config):
             model.eval()
             all_preds = []
             all_labels = []
+            predictions = []
 
             with torch.no_grad():
                 for graph_path in test_graphs:
@@ -135,10 +136,17 @@ def train_model(config):
                     
                     all_preds.extend(preds.cpu().numpy())
                     all_labels.extend(labels.cpu().numpy())
+                    
+                    # Get graph filename from path
+                    graph_filename = os.path.basename(graph_path)
+                    predictions.append({
+                        "graph_id": graph_filename,
+                        "labels": preds.cpu().numpy().tolist()
+                    })
 
             # Compute metrics
             metrics = compute_metrics(all_preds, all_labels)
-            logger.update_metrics(metrics, {})
+            logger.update_metrics(metrics, predictions)
     
     logger.finish_run()
     # Save final model
