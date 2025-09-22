@@ -244,8 +244,17 @@ def main():
     else:
         dataset_name = args.dataset.lower()
 
-    # Normalize model name - keep original case for GraphSep models
-    model_name = args.model
+    # Normalize model name - handle case variations
+    model_name_mapping = {
+        'gt-sep': 'GT-sep',
+        'gat-sep': 'GAT-sep', 
+        'gt': 'GT',
+        'gat': 'GAT',
+        'gcn': 'GCN',
+        'sage': 'SAGE',
+        'resnet': 'ResNet'
+    }
+    model_name = model_name_mapping.get(args.model.lower(), args.model)
 
     # Create configuration
     config = {

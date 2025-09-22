@@ -83,7 +83,7 @@ def create_model(model_name, config):
             num_layers=config.get('num_layers', 3),
             dropout=config['dropout'],
             use_batchnorm=config['use_batchnorm'],
-            use_bias=config['use_bias']
+            use_skip=config.get('use_skip', True)
         )
     elif model_name == 'GCN':
         return GCN(
