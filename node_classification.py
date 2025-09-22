@@ -147,7 +147,7 @@ def train_model(model, config):
             optimizer.zero_grad()
 
             # Forward pass
-            logits = model(batch.x, batch.edge_index, batch.batch)
+            logits = model(batch.x, batch.edge_index)
             
             # Compute loss
             loss = compute_loss(logits, batch.y, num_classes=config["output_dim"])
@@ -176,7 +176,7 @@ def train_model(model, config):
             with torch.no_grad():
                 for batch in test_loader:
                     batch = batch.to(config["device"])
-                    logits = model(batch.x, batch.edge_index, batch.batch)
+                    logits = model(batch.x, batch.edge_index)
                     preds = torch.argmax(logits, dim=1)
                     
                     all_preds.extend(preds.cpu().numpy())

@@ -71,7 +71,7 @@ def get_data_loaders(dataset_name, dataset_dir, batch_size=1):
     return train_loader, test_loader
 
 
-def get_aggregation(aggr_type):
+def get_aggregation(aggr_type, hidden_dim=256):
     """Get the aggregation function based on the type."""
     if aggr_type == "mean":
         return "mean"
@@ -84,7 +84,7 @@ def get_aggregation(aggr_type):
     elif aggr_type == "softmax":
         return aggr.SoftmaxAggregation(learn=True)
     elif aggr_type == "attn":
-        return aggr.AttentionalAggregation(gate_nn=torch.nn.Linear(256, 1))
+        return aggr.AttentionalAggregation(gate_nn=torch.nn.Linear(hidden_dim, 1))
     elif aggr_type == "multi":
         return aggr.MultiAggregation(['mean', 'std', aggr.SoftmaxAggregation(learn=True)])
     else:
@@ -93,7 +93,7 @@ def get_aggregation(aggr_type):
 
 def create_graphsage_model(config):
     """Create and return GraphSAGE model."""
-    aggr_func = get_aggregation(config['aggr_type'])
+    aggr_func = get_aggregation(config['aggr_type'], config['hidden_dim'])
     
     return GraphSAGE(
         in_dim=config['input_dim'],
@@ -103,7 +103,7 @@ def create_graphsage_model(config):
         aggr=aggr_func,
         dropout=config['dropout'],
         use_batchnorm=config['use_batchnorm'],
-        use_bias=config['use_bias']
+        use_skip=config.get('use_skip', True)
     )
 
 
@@ -134,7 +134,7 @@ def train_model(model, config):
             optimizer.zero_grad()
 
             # Forward pass
-            logits = model(batch.x, batch.edge_index, batch.batch)
+            logits = model(batch.x, batch.edge_index)
             
             # Compute loss
             loss = compute_loss(logits, batch.y, num_classes=config["output_dim"])
@@ -163,7 +163,7 @@ def train_model(model, config):
             with torch.no_grad():
                 for batch in test_loader:
                     batch = batch.to(config["device"])
-                    logits = model(batch.x, batch.edge_index, batch.batch)
+                    logits = model(batch.x, batch.edge_index)
                     preds = torch.argmax(logits, dim=1)
                     
                     all_preds.extend(preds.cpu().numpy())

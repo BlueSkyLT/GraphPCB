@@ -244,8 +244,8 @@ def main():
     else:
         dataset_name = args.dataset.lower()
 
-    # Normalize model name
-    model_name = args.model.upper()
+    # Normalize model name - keep original case for GraphSep models
+    model_name = args.model
 
     # Create configuration
     config = {
