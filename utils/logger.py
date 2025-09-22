@@ -9,10 +9,10 @@ from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_
 
 
 class PCB_Logger:
-    def __init__(self, home_dir, config):
-        self.home_dir = home_dir
+    def __init__(self, config):
         self.config = config
-        self.checkpoint_dir = self.get_checkpoint_dir(home_dir, config['dataset'], config['experiment_name'])
+        self.home_dir = config['home_dir']
+        self.checkpoint_dir = self.get_checkpoint_dir(self.home_dir, config['dataset'], config['experiment_name'])
         self.predictions = None
         # self.verbose = config['args']['verbose']
         self.log_path = os.path.join(self.checkpoint_dir, "train_log.txt")
@@ -53,7 +53,7 @@ class PCB_Logger:
         Calculate the Percentage of Overlapping Detections (POD) between MLP and GNN predictions.
         """
         # Load predictions from JSON files
-        mlp_file = f"{self.home_dir}/GraphPCB_Analysis/Graph-{self.config['dataset'][0].upper()}-trained/MLP/predictions_final.json"
+        mlp_file = f"{self.home_dir}/Graph-{self.config['dataset'][0].upper()}-trained/MLP/predictions_final.json"
         with open(mlp_file, 'r') as f:
             mlp_predictions = json.load(f)
 
@@ -117,7 +117,7 @@ class PCB_Logger:
 
     @staticmethod
     def get_checkpoint_dir(home_dir, dataset_name, experiment_name):
-        checkpoint_dir = os.path.join(home_dir, f'GraphPCB_Analysis/Graph-{dataset_name[0].upper()}-trained/{experiment_name}')
+        checkpoint_dir = os.path.join(home_dir, f'Graph-{dataset_name[0].upper()}-trained/{experiment_name}')
         
         if os.path.exists(checkpoint_dir):
             shutil.rmtree(checkpoint_dir)

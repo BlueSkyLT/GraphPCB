@@ -1,5 +1,5 @@
 from torch import nn
-from .modules import (ResidualModuleWrapper, FeedForwardModule, GCNModule, SAGEModule, GATModule, GATSepModule,
+from .graphsep_modules import (ResidualModuleWrapper, FeedForwardModule, GCNModule, SAGEModule, GATModule, GATSepModule,
                      TransformerAttentionModule, TransformerAttentionSepModule)
 
 

@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GINConv, BatchNorm, GCNConv, GATConv, SAGEConv
@@ -105,9 +106,9 @@ class GAT(nn.Module):
         return x
 
 class GIN(nn.Module):
-    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=3, dropout=0.5, use_batchnorm=True):
+    def __init__(self, in_dim, hidden_dim, out_dim, num_layers=3, dropout=0.5, use_batchnorm=True, use_bias=True, use_skip=True):
         """
-        Implements a GIN model with multiple layers and optional batch normalization.
+        Implements a GIN model with multiple layers, optional batch normalization, bias, and skip connections.
 
         Args:
             in_dim (int): Input feature dimension.
@@ -116,42 +117,73 @@ class GIN(nn.Module):
             num_layers (int): Number of GIN layers.
             dropout (float): Dropout rate.
             use_batchnorm (bool): Whether to use Batch Normalization.
+            use_bias (bool): Whether to include bias in layers.
+            use_skip (bool): Whether to use skip connections.
         """
         super(GIN, self).__init__()
         self.use_batchnorm = use_batchnorm
+        self.use_skip = use_skip
         self.num_layers = num_layers
 
         # GIN Layers
         self.convs = nn.ModuleList()
         self.bns = nn.ModuleList() if use_batchnorm else None
+        self.skip_projs = nn.ModuleList() if use_skip else None
 
         # First layer (Input → Hidden)
-        mlp = nn.Sequential(nn.Linear(in_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, hidden_dim))
+        mlp = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim, bias=use_bias),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim, bias=use_bias)
+        )
         self.convs.append(GINConv(nn=mlp))
         if use_batchnorm:
             self.bns.append(BatchNorm(hidden_dim))
+        if use_skip:
+            self.skip_projs.append(nn.Linear(in_dim, hidden_dim) if in_dim != hidden_dim else nn.Identity())
 
         # Hidden layers
         for _ in range(num_layers - 2):
-            mlp = nn.Sequential(nn.Linear(hidden_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, hidden_dim))
+            mlp = nn.Sequential(
+                nn.Linear(hidden_dim, hidden_dim, bias=use_bias),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, hidden_dim, bias=use_bias)
+            )
             self.convs.append(GINConv(nn=mlp))
             if use_batchnorm:
                 self.bns.append(BatchNorm(hidden_dim))
+            if use_skip:
+                self.skip_projs.append(nn.Identity())  # same dim, no projection needed
 
         # Output layer (Hidden → Output)
-        mlp = nn.Sequential(nn.Linear(hidden_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, out_dim))
+        mlp = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim, bias=use_bias),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, out_dim, bias=use_bias)
+        )
         self.convs.append(GINConv(nn=mlp))
 
         # Dropout layer
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, edge_index):
+        residual = x  # For first skip connection
+
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
+
             if self.use_batchnorm and i < len(self.bns):
                 x = self.bns[i](x)
-            x = F.relu(x)
-            x = self.dropout(x)
+
+            if i < self.num_layers - 1:
+                if self.use_skip:
+                    skip = self.skip_projs[i](residual)
+                    x = x + skip  # Add skip connection
+                    residual = x  # Update for next layer
+
+                x = F.relu(x)
+                x = self.dropout(x)
+
         return x
 
 
