@@ -40,6 +40,7 @@ class GraphPCBDataset:
         print("Loading dataset...")
         self.device = device
         self.graphs = []
+        self.graph_filenames = []  # Store filenames for graph identification
         self.graph_files = [f for f in os.listdir(data_dir) if f.endswith('.pt')]
         # randomly shuffle the graph files
         np.random.shuffle(self.graph_files)
@@ -59,19 +60,23 @@ class GraphPCBDataset:
                 edge_index = data.edge_index
                 num_nodes = data.x.size(0)
 
-                # Create DGL graph
-                g = dgl.graph((edge_index[0], edge_index[1]), num_nodes=num_nodes, device=device)
+                # Create DGL graph on CPU first (required for to_bidirected)
+                g = dgl.graph((edge_index[0], edge_index[1]), num_nodes=num_nodes, device='cpu')
 
                 if to_bidirectional:
                     g = dgl.to_bidirected(g)
                 if add_self_loops:
                     g = dgl.add_self_loop(g)
+                
+                # Move graph to target device after transformations
+                g = g.to(device)
 
                 # Add node features and labels
                 g.ndata['x'] = data.x.to(device)
                 g.ndata['y'] = data.y.to(device)
 
                 self.graphs.append(g)
+                self.graph_filenames.append(filename)
 
         print(f"Loaded {len(self.graphs)} graphs with {self.num_node_features} node features and {self.num_targets} classes.")
 
@@ -79,7 +84,7 @@ class GraphPCBDataset:
         return len(self.graphs)
 
     def __getitem__(self, idx):
-        return self.graphs[idx]
+        return self.graphs[idx], self.graph_filenames[idx]
 
 
 def compute_loss(logits, labels, loss_type="NLL", gamma=2.0):
@@ -126,7 +131,7 @@ def train_model(model, config):
         total_loss = 0
         num_graphs = 0
 
-        for graph in train_dataset:
+        for graph, filename in train_dataset:
             optimizer.zero_grad()
 
             with autocast(enabled=config.get('amp', False)):
@@ -160,18 +165,28 @@ def train_model(model, config):
             model.eval()
             all_preds = []
             all_labels = []
+            predictions = []  # List to store prediction data for each graph
 
             with torch.no_grad():
-                for graph in test_dataset:
+                for graph, filename in test_dataset:
                     logits = model(graph, graph.ndata['x'])
                     preds = torch.argmax(logits, dim=1)
                     
                     all_preds.extend(preds.cpu().numpy())
                     all_labels.extend(graph.ndata['y'].cpu().numpy())
+                    
+                    # Build predictions structure for POD calculation
+                    # Use filename without extension as graph_id
+                    graph_id = filename.replace('.pt', '')
+                    predictions.append({
+                        'graph_id': graph_id,
+                        'predictions': preds.cpu().numpy().tolist(),
+                        'labels': graph.ndata['y'].cpu().numpy().tolist()
+                    })
 
             # Compute metrics
             metrics = compute_metrics(all_preds, all_labels)
-            logger.update_metrics(metrics, {})
+            logger.update_metrics(metrics, predictions)
     
     logger.finish_run()
     # Save final model
